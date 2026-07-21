@@ -4,11 +4,48 @@
 
 ## Run
 
-1. 将 `.env.example` 复制为 `.env`，设置 MySQL 密码。
-2. 运行 `docker compose up --build`。
-3. 调用 `GET http://127.0.0.1:8080/healthz`，应返回 `{"status":"ok"}`。
+以下命令均适用于 Git Bash。服务默认监听 `:8080`，并会在启动时创建 `repositories` 与 `commit_records` 表。
 
-服务启动时会创建 `repositories` 与 `commit_records` 表。
+### Docker 启动全部服务
+
+```bash
+cp .env.example .env
+# 编辑 .env，设置 MYSQL_PASSWORD 和 MYSQL_ROOT_PASSWORD
+docker compose up --build
+```
+
+### 本机直接启动服务
+
+本机需要安装 Go（本项目要求 Go 1.25.12）和 MySQL。请先创建 `tracker` 数据库及对应的 MySQL 用户，然后设置连接串并启动：
+
+```bash
+export MYSQL_DSN="tracker:your-password@tcp(127.0.0.1:3306)/tracker?parseTime=true"
+go run ./cmd/server
+```
+
+也可以自行指定监听地址：
+
+```bash
+export LISTEN_ADDR=127.0.0.1:8080
+export MYSQL_DSN="tracker:your-password@tcp(127.0.0.1:3306)/tracker?parseTime=true"
+go run ./cmd/server
+```
+
+### Docker 启动 MySQL，本机启动服务
+
+```bash
+cp .env.example .env
+# 编辑 .env，设置 MYSQL_PASSWORD 和 MYSQL_ROOT_PASSWORD
+docker compose up -d mysql
+export MYSQL_DSN="tracker:your-password@tcp(127.0.0.1:3306)/tracker?parseTime=true"
+go run ./cmd/server
+```
+
+启动后可验证服务状态：
+
+```bash
+curl http://127.0.0.1:8080/healthz
+```
 
 ## Configure Clients
 
@@ -26,13 +63,13 @@
 
 After the service is running, send a real test record and confirm it appears in the dashboard:
 
-```powershell
+```bash
 go run ./cmd/smoke-test
 ```
 
 The default endpoint is `http://127.0.0.1:8080/v1/records`. Override it with `-url` or `AI_TRACKER_UPLOAD_URL`:
 
-```powershell
+```bash
 go run ./cmd/smoke-test -url http://tracker.internal:8080/v1/records
 ```
 
