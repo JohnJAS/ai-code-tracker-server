@@ -23,6 +23,33 @@ func TestHealthz(t *testing.T) {
 	}
 }
 
+func TestDashboardPage(t *testing.T) {
+	response := httptest.NewRecorder()
+	NewHandler(&fakeStore{}).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/", nil))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if contentType := response.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "text/html") {
+		t.Fatalf("content type = %q, want HTML", contentType)
+	}
+	if !strings.Contains(response.Body.String(), "AI Code Tracker") {
+		t.Fatalf("body does not contain dashboard title: %q", response.Body.String())
+	}
+}
+
+func TestDashboardData(t *testing.T) {
+	response := httptest.NewRecorder()
+	NewHandler(&fakeStore{}).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/dashboard", nil))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if response.Body.String() != "{\"total_commits\":0,\"ai_commits\":0,\"ai_lines\":0,\"total_lines\":0,\"repositories\":0,\"recent_records\":[]}\n" {
+		t.Fatalf("body = %q", response.Body.String())
+	}
+}
+
 func TestPostRecordsReturnsInsertResult(t *testing.T) {
 	storage := &fakeStore{result: store.InsertResult{Inserted: 1, Duplicates: 1}}
 	request := httptest.NewRequest(http.MethodPost, "/v1/records", strings.NewReader(validPayload()))
@@ -58,6 +85,10 @@ type fakeStore struct {
 func (s *fakeStore) UpsertBatch(_ context.Context, origin string, _ []domain.Record) (store.InsertResult, error) {
 	s.origin = origin
 	return s.result, nil
+}
+
+func (s *fakeStore) Dashboard(_ context.Context) (store.Dashboard, error) {
+	return store.Dashboard{RecentRecords: []store.DashboardRecord{}}, nil
 }
 
 func validPayload() string {

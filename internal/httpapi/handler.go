@@ -21,13 +21,26 @@ func NewHandler(storage store.Store) http.Handler {
 
 func (h handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	switch {
+	case request.Method == http.MethodGet && request.URL.Path == "/":
+		writeDashboard(writer)
 	case request.Method == http.MethodGet && request.URL.Path == "/healthz":
 		writeJSON(writer, http.StatusOK, map[string]string{"status": "ok"})
+	case request.Method == http.MethodGet && request.URL.Path == "/v1/dashboard":
+		h.getDashboard(writer, request)
 	case request.Method == http.MethodPost && request.URL.Path == "/v1/records":
 		h.postRecords(writer, request)
 	default:
 		writeJSON(writer, http.StatusNotFound, errorResponse{Error: "not found"})
 	}
+}
+
+func (h handler) getDashboard(writer http.ResponseWriter, request *http.Request) {
+	dashboard, err := h.store.Dashboard(request.Context())
+	if err != nil {
+		writeJSON(writer, http.StatusInternalServerError, errorResponse{Error: "could not load dashboard"})
+		return
+	}
+	writeJSON(writer, http.StatusOK, dashboard)
 }
 
 func (h handler) postRecords(writer http.ResponseWriter, request *http.Request) {

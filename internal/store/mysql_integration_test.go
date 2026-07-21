@@ -38,6 +38,43 @@ func TestMySQLStoreUpsertIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestMySQLStoreDashboardSummarizesAndOrdersRecords(t *testing.T) {
+	dsn := os.Getenv("MYSQL_TEST_DSN")
+	if dsn == "" {
+		t.Skip("MYSQL_TEST_DSN is not set")
+	}
+
+	db := newMigratedDatabase(t, dsn)
+	repository := store.NewMySQLStore(db)
+	first := validRecord()
+	second := domain.Record{
+		Author:     "reviewer",
+		CommitID:   strings.Repeat("b", 40),
+		AiLines:    0,
+		TotalLines: 3,
+		IsAICommit: false,
+		Date:       "2026-07-20 10:01:00",
+		Message:    "fix: dashboard",
+	}
+	if _, err := repository.UpsertBatch(context.Background(), "github.com/acme/demo", []domain.Record{first, second}); err != nil {
+		t.Fatalf("UpsertBatch() error = %v", err)
+	}
+
+	dashboard, err := repository.Dashboard(context.Background())
+	if err != nil {
+		t.Fatalf("Dashboard() error = %v", err)
+	}
+	if dashboard.TotalCommits != 2 || dashboard.AICommits != 1 || dashboard.AILines != 1 || dashboard.TotalLines != 5 || dashboard.Repositories != 1 {
+		t.Fatalf("dashboard summary = %#v", dashboard)
+	}
+	if len(dashboard.RecentRecords) != 2 {
+		t.Fatalf("recent records = %#v", dashboard.RecentRecords)
+	}
+	if dashboard.RecentRecords[0].CommitID != second.CommitID || dashboard.RecentRecords[0].Message != second.Message {
+		t.Fatalf("newest record = %#v", dashboard.RecentRecords[0])
+	}
+}
+
 func newMigratedDatabase(t *testing.T, dsn string) *sql.DB {
 	t.Helper()
 	db, err := sql.Open("mysql", dsn)
