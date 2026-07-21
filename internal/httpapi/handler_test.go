@@ -1,0 +1,71 @@
+package httpapi
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
+
+	"ai-code-tracker-server/internal/domain"
+	"ai-code-tracker-server/internal/store"
+)
+
+func TestHealthz(t *testing.T) {
+	response := httptest.NewRecorder()
+	NewHandler(&fakeStore{}).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/healthz", nil))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if response.Body.String() != "{\"status\":\"ok\"}\n" {
+		t.Fatalf("body = %q", response.Body.String())
+	}
+}
+
+func TestPostRecordsReturnsInsertResult(t *testing.T) {
+	storage := &fakeStore{result: store.InsertResult{Inserted: 1, Duplicates: 1}}
+	request := httptest.NewRequest(http.MethodPost, "/v1/records", strings.NewReader(validPayload()))
+	response := httptest.NewRecorder()
+
+	NewHandler(storage).ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if response.Body.String() != "{\"received\":2,\"inserted\":1,\"duplicates\":1}\n" {
+		t.Fatalf("body = %q", response.Body.String())
+	}
+	if storage.origin != "github.com/acme/demo" {
+		t.Fatalf("origin = %q", storage.origin)
+	}
+}
+
+func TestPostRecordsRejectsInvalidJSON(t *testing.T) {
+	response := httptest.NewRecorder()
+	NewHandler(&fakeStore{}).ServeHTTP(response, httptest.NewRequest(http.MethodPost, "/v1/records", strings.NewReader("{")))
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
+type fakeStore struct {
+	result store.InsertResult
+	origin string
+}
+
+func (s *fakeStore) UpsertBatch(_ context.Context, origin string, _ []domain.Record) (store.InsertResult, error) {
+	s.origin = origin
+	return s.result, nil
+}
+
+func validPayload() string {
+	return `{
+  "repository_url": "git@github.com:acme/demo.git",
+  "records": [
+    {"author":"dev","ai_lines":1,"total_lines":2,"is_ai_commit":true,"commit_id":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","date":"2026-07-20 10:00:00","message":"feat: demo"},
+    {"author":"dev","ai_lines":0,"total_lines":1,"is_ai_commit":false,"commit_id":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","date":"2026-07-20 10:01:00","message":"fix: demo"}
+  ]
+}`
+}
