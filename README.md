@@ -48,7 +48,7 @@ git push origin v1.2.0
 IMAGE_NAME=ghcr.io/johnjas/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
 ```
 
-若 GHCR package 为私有仓库，请先执行 `docker login ghcr.io`。每次发布还会在对应 GitHub Actions 运行中提供 `ai-code-tracker-server-v1.2.0-linux-amd64.tar` 产物；下载后可离线加载并启动：
+若 GHCR package 为私有仓库，请先执行 `docker login ghcr.io`。每次成功发布还会创建同名 GitHub Release，并自动生成变更日志。Release 页面提供永久的 `ai-code-tracker-server-v1.2.0-linux-amd64.tar` 下载资产；对应 GitHub Actions 运行也保留同一构建产物。下载 tar 后可离线加载并启动：
 
 ```bash
 docker load -i ai-code-tracker-server-v1.2.0-linux-amd64.tar
@@ -56,6 +56,8 @@ IMAGE_NAME=ghcr.io/johnjas/ai-code-tracker-server APP_VERSION=v1.2.0 docker comp
 ```
 
 tar 产物只适用于 `linux/amd64` 主机。
+
+该行为仅适用于此工作流更新后创建的新 tag；已有 tag 不会自动补建 GitHub Release。
 
 ### MySQL 数据目录
 
