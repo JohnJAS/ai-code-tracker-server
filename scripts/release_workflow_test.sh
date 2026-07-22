@@ -11,6 +11,7 @@ require() {
 }
 
 require 'tags: ["v*"]'
+require 'contents: write'
 require 'packages: write'
 require 'go test ./...'
 require 'id: image_name'
@@ -21,5 +22,8 @@ require 'platforms: linux/amd64'
 require 'type=registry'
 require 'type=docker,dest=/tmp/ai-code-tracker-server-${{ github.ref_name }}-linux-amd64.tar'
 require 'actions/upload-artifact@v4'
+require 'softprops/action-gh-release@v2'
+require 'generate_release_notes: true'
+require 'files: /tmp/ai-code-tracker-server-${{ github.ref_name }}-linux-amd64.tar'
 
 printf 'PASS\n'
