@@ -4,7 +4,7 @@
 
 **Goal:** Publish version-tagged Linux AMD64 images to GHCR and attach an equivalent Docker archive to each tag-triggered GitHub Actions run.
 
-**Architecture:** A `v*` tag workflow runs Go tests before one Buildx build writes two outputs: a registry image and a Docker archive. Registry ownership is derived from `github.repository`.
+**Architecture:** A `v*` tag workflow runs Go tests before one Buildx build writes two outputs: a registry image and a Docker archive. The repository name is converted to lowercase before it is used as the GHCR path.
 
 **Tech Stack:** GitHub Actions, Docker Buildx, GHCR, Go 1.25, Docker archive exporter.
 
@@ -18,7 +18,7 @@
 
 - [ ] **Step 1: Write the failing contract check**
 
-Create an executable Bash script that reads `.github/workflows/release.yml`. For each required string, run `grep -F -- "$required" "$workflow" > /dev/null`; when any lookup fails, print `missing workflow content: <string>` to stderr and exit 1. The required strings are `tags: ["v*"]`, `packages: write`, `go test ./...`, `ghcr.io/${{ github.repository }}`, `platforms: linux/amd64`, `type=registry`, `type=docker,dest=/tmp/ai-code-tracker-server-${{ github.ref_name }}-linux-amd64.tar`, and `actions/upload-artifact@v4`. Print `PASS` after all checks.
+Create an executable Bash script that reads `.github/workflows/release.yml`. For each required string, run `grep -F -- "$required" "$workflow" > /dev/null`; when any lookup fails, print `missing workflow content: <string>` to stderr and exit 1. The required strings are `tags: ["v*"]`, `packages: write`, `go test ./...`, `id: image_name`, `echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"`, `${{ steps.image_name.outputs.name }}:${{ github.ref_name }}`, `platforms: linux/amd64`, `type=registry`, `type=docker,dest=/tmp/ai-code-tracker-server-${{ github.ref_name }}-linux-amd64.tar`, and `actions/upload-artifact@v4`. Print `PASS` after all checks.
 
 - [ ] **Step 2: Run the check to verify it fails**
 
@@ -41,7 +41,7 @@ Run `git add scripts/release_workflow_test.sh`, `git update-index --chmod=+x scr
 
 Use `actions/checkout@v4`, `actions/setup-go@v5` with `go-version-file: go.mod`, then a `run: go test ./...` step. Configure `on.push.tags` as `["v*"]`, workflow permissions as `contents: read` and `packages: write`, and `runs-on: ubuntu-latest`. Use `docker/setup-buildx-action@v3`, then `docker/login-action@v3` with `registry: ghcr.io`, `username: ${{ github.actor }}`, and `password: ${{ secrets.GITHUB_TOKEN }}`.
 
-Use `docker/build-push-action@v6` with `context: .`, `platforms: linux/amd64`, two tags (`ghcr.io/${{ github.repository }}:${{ github.ref_name }}` and `ghcr.io/${{ github.repository }}:latest`), and two outputs (`type=registry` and `type=docker,dest=/tmp/ai-code-tracker-server-${{ github.ref_name }}-linux-amd64.tar`). Finally, use `actions/upload-artifact@v4` to upload that archive as `ai-code-tracker-server-${{ github.ref_name }}-linux-amd64` with `if-no-files-found: error`.
+Use a preceding `id: image_name` Bash step to write `ghcr.io/${GITHUB_REPOSITORY,,}` to `GITHUB_OUTPUT`. Configure `docker/build-push-action@v6` with `context: .`, `platforms: linux/amd64`, two tags based on `${{ steps.image_name.outputs.name }}`, and two outputs (`type=registry` and `type=docker,dest=/tmp/ai-code-tracker-server-${{ github.ref_name }}-linux-amd64.tar`). Finally, use `actions/upload-artifact@v4` to upload that archive as `ai-code-tracker-server-${{ github.ref_name }}-linux-amd64` with `if-no-files-found: error`.
 
 - [ ] **Step 2: Verify the contract turns green**
 
@@ -67,7 +67,7 @@ Run `git add .github/workflows/release.yml scripts/release_workflow_test.sh`, th
 
 - [ ] **Step 1: Add release examples**
 
-Document `git tag v1.2.0` and `git push origin v1.2.0`; GHCR startup with `IMAGE_NAME=ghcr.io/JohnJAS/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d`; and archive startup with `docker load -i ai-code-tracker-server-v1.2.0-linux-amd64.tar` followed by the same Compose command. State that the archive is Linux AMD64, private packages require `docker login ghcr.io`, and each tag run publishes the exact version plus `latest`.
+Document `git tag v1.2.0` and `git push origin v1.2.0`; GHCR startup with `IMAGE_NAME=ghcr.io/johnjas/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d`; and archive startup with `docker load -i ai-code-tracker-server-v1.2.0-linux-amd64.tar` followed by the same Compose command. State that the archive is Linux AMD64, private packages require `docker login ghcr.io`, and each tag run publishes the exact version plus `latest`.
 
 - [ ] **Step 2: Run local verification**
 

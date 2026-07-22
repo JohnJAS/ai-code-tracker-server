@@ -42,17 +42,17 @@ git tag v1.2.0
 git push origin v1.2.0
 ```
 
-这会生成 `ghcr.io/JohnJAS/ai-code-tracker-server:v1.2.0` 和 `ghcr.io/JohnJAS/ai-code-tracker-server:latest`。使用 GHCR 镜像启动时，无需在本机重新构建：
+这会生成 `ghcr.io/johnjas/ai-code-tracker-server:v1.2.0` 和 `ghcr.io/johnjas/ai-code-tracker-server:latest`。使用 GHCR 镜像启动时，无需在本机重新构建：
 
 ```bash
-IMAGE_NAME=ghcr.io/JohnJAS/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
+IMAGE_NAME=ghcr.io/johnjas/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
 ```
 
 若 GHCR package 为私有仓库，请先执行 `docker login ghcr.io`。每次发布还会在对应 GitHub Actions 运行中提供 `ai-code-tracker-server-v1.2.0-linux-amd64.tar` 产物；下载后可离线加载并启动：
 
 ```bash
 docker load -i ai-code-tracker-server-v1.2.0-linux-amd64.tar
-IMAGE_NAME=ghcr.io/JohnJAS/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
+IMAGE_NAME=ghcr.io/johnjas/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
 ```
 
 tar 产物只适用于 `linux/amd64` 主机。
