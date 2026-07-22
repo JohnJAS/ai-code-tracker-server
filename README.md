@@ -6,12 +6,39 @@
 
 以下命令均适用于 Git Bash。服务默认监听 `:8080`，并会在启动时创建 `repositories` 与 `commit_records` 表。
 
-### Docker 启动全部服务
+### Docker 启动本地开发版本
 
 ```bash
 cp .env.example .env
 # 编辑 .env，设置 MYSQL_PASSWORD 和 MYSQL_ROOT_PASSWORD
-docker compose up --build
+./scripts/build.sh
+docker compose up -d
+```
+
+不带参数的 `build.sh` 使用当前本地工作区构建 `ai-code-tracker-server:latest`，包含未提交的改动。`docker compose up` 只运行镜像，不会重新构建服务镜像。
+
+### Docker 启动指定版本
+
+正式版本以 Git tag 为唯一来源。下面的命令会从 `v1.2.0` 对应的提交构建 `ai-code-tracker-server:v1.2.0`；即使当前本地代码不同，也不会影响该镜像：
+
+```bash
+./scripts/build.sh v1.2.0
+APP_VERSION=v1.2.0 docker compose up -d
+```
+
+传入的版本必须是已有 Git tag；不存在时构建会失败。默认镜像名是 `ai-code-tracker-server`，可通过 `IMAGE_NAME` 覆盖，并在构建和启动时使用相同的值：
+
+```bash
+IMAGE_NAME=registry.example.com/team/ai-code-tracker-server ./scripts/build.sh v1.2.0
+IMAGE_NAME=registry.example.com/team/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
+```
+
+### MySQL 数据目录
+
+MySQL 默认将数据持久化到仓库内的 `./data/mysql`，该目录已被 Git 忽略。`docker compose down` 不会删除数据；只有手动删除该目录才会清空数据库。可通过 `MYSQL_DATA_DIR` 挂载任意宿主机目录：
+
+```bash
+MYSQL_DATA_DIR=/d/docker-data/ai-code-tracker-mysql docker compose up -d
 ```
 
 ### 本机直接启动服务
