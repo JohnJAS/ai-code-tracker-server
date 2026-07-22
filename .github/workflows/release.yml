@@ -28,13 +28,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - id: image_name
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
       - uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ghcr.io/${{ github.repository }}:latest
+            ${{ steps.image_name.outputs.name }}:${{ github.ref_name }}
+            ${{ steps.image_name.outputs.name }}:latest
           outputs: |
             type=registry
             type=docker,dest=/tmp/ai-code-tracker-server-${{ github.ref_name }}-linux-amd64.tar
