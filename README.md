@@ -33,6 +33,30 @@ IMAGE_NAME=registry.example.com/team/ai-code-tracker-server ./scripts/build.sh v
 IMAGE_NAME=registry.example.com/team/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
 ```
 
+### 发布 GitHub Container Registry 镜像
+
+推送以 `v` 开头的 Git tag 会触发 GitHub Actions。工作流先运行 Go 测试，然后发布 `linux/amd64` 镜像到 GitHub Container Registry（GHCR），同时上传 Docker tar 产物：
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+这会生成 `ghcr.io/JohnJAS/ai-code-tracker-server:v1.2.0` 和 `ghcr.io/JohnJAS/ai-code-tracker-server:latest`。使用 GHCR 镜像启动时，无需在本机重新构建：
+
+```bash
+IMAGE_NAME=ghcr.io/JohnJAS/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
+```
+
+若 GHCR package 为私有仓库，请先执行 `docker login ghcr.io`。每次发布还会在对应 GitHub Actions 运行中提供 `ai-code-tracker-server-v1.2.0-linux-amd64.tar` 产物；下载后可离线加载并启动：
+
+```bash
+docker load -i ai-code-tracker-server-v1.2.0-linux-amd64.tar
+IMAGE_NAME=ghcr.io/JohnJAS/ai-code-tracker-server APP_VERSION=v1.2.0 docker compose up -d
+```
+
+tar 产物只适用于 `linux/amd64` 主机。
+
 ### MySQL 数据目录
 
 MySQL 默认将数据持久化到仓库内的 `./data/mysql`，该目录已被 Git 忽略。`docker compose down` 不会删除数据；只有手动删除该目录才会清空数据库。可通过 `MYSQL_DATA_DIR` 挂载任意宿主机目录：
