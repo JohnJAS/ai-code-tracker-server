@@ -23,6 +23,7 @@ mkdir -p "$repo/scripts" "$temp_dir/bin"
 git -C "$repo" init -q
 git -C "$repo" config user.email test@example.invalid
 git -C "$repo" config user.name test
+git -C "$repo" config core.autocrlf false
 cp "$root/scripts/build.sh" "$repo/scripts/build.sh"
 chmod +x "$repo/scripts/build.sh"
 printf 'FROM scratch\n' > "$repo/Dockerfile"
