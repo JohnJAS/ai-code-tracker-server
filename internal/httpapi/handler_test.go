@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"ai-code-tracker-server/internal/domain"
 	"ai-code-tracker-server/internal/store"
@@ -50,6 +51,67 @@ func TestDashboardData(t *testing.T) {
 	}
 }
 
+func TestRecordsDataUsesDefaults(t *testing.T) {
+	storage := &fakeStore{records: store.RecordPage{
+		Records:  []store.DashboardRecord{},
+		Page:     1,
+		PageSize: 20,
+	}}
+	response := httptest.NewRecorder()
+
+	NewHandler(storage).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/records", nil))
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	if storage.query.Page != 1 || storage.query.PageSize != 20 {
+		t.Fatalf("query = %#v", storage.query)
+	}
+}
+
+func TestRecordsDataPassesFiltersToStore(t *testing.T) {
+	storage := &fakeStore{records: store.RecordPage{
+		Records:  []store.DashboardRecord{},
+		Page:     2,
+		PageSize: 10,
+	}}
+	response := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet,
+		"/v1/records?author=dev&repository=acme&start_date=2026-08-01&end_date=2026-08-09&page=2&page_size=10", nil)
+
+	NewHandler(storage).ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", response.Code, http.StatusOK)
+	}
+	wantStart := time.Date(2026, time.August, 1, 0, 0, 0, 0, time.UTC)
+	wantEnd := time.Date(2026, time.August, 10, 0, 0, 0, 0, time.UTC)
+	if storage.query.Author != "dev" || storage.query.Repository != "acme" ||
+		!storage.query.Start.Equal(wantStart) || !storage.query.End.Equal(wantEnd) ||
+		storage.query.Page != 2 || storage.query.PageSize != 10 {
+		t.Fatalf("query = %#v", storage.query)
+	}
+}
+
+func TestRecordsDataRejectsInvalidQuery(t *testing.T) {
+	for _, target := range []string{
+		"/v1/records?start_date=invalid",
+		"/v1/records?start_date=2026-08-09&end_date=2026-08-08",
+		"/v1/records?page=0",
+		"/v1/records?page_size=101",
+	} {
+		t.Run(target, func(t *testing.T) {
+			response := httptest.NewRecorder()
+
+			NewHandler(&fakeStore{}).ServeHTTP(response, httptest.NewRequest(http.MethodGet, target, nil))
+
+			if response.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, want %d", response.Code, http.StatusBadRequest)
+			}
+		})
+	}
+}
+
 func TestPostRecordsReturnsInsertResult(t *testing.T) {
 	storage := &fakeStore{result: store.InsertResult{Inserted: 1, Duplicates: 1}}
 	request := httptest.NewRequest(http.MethodPost, "/v1/records", strings.NewReader(validPayload()))
@@ -78,8 +140,10 @@ func TestPostRecordsRejectsInvalidJSON(t *testing.T) {
 }
 
 type fakeStore struct {
-	result store.InsertResult
-	origin string
+	result  store.InsertResult
+	origin  string
+	query   store.RecordQuery
+	records store.RecordPage
 }
 
 func (s *fakeStore) UpsertBatch(_ context.Context, origin string, _ []domain.Record) (store.InsertResult, error) {
@@ -89,6 +153,11 @@ func (s *fakeStore) UpsertBatch(_ context.Context, origin string, _ []domain.Rec
 
 func (s *fakeStore) Dashboard(_ context.Context) (store.Dashboard, error) {
 	return store.Dashboard{RecentRecords: []store.DashboardRecord{}}, nil
+}
+
+func (s *fakeStore) Records(_ context.Context, query store.RecordQuery) (store.RecordPage, error) {
+	s.query = query
+	return s.records, nil
 }
 
 func validPayload() string {
