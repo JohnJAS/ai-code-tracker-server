@@ -119,13 +119,13 @@ func TestMySQLStoreRecordsReturnsEmptyOutOfRangePage(t *testing.T) {
 
 	page, err := repository.Records(context.Background(), store.RecordQuery{
 		Author:   "dev",
-		Page:     3,
+		Page:     4,
 		PageSize: 1,
 	})
 	if err != nil {
 		t.Fatalf("Records() error = %v", err)
 	}
-	if page.TotalRecords != 2 || page.TotalPages != 2 || page.Page != 3 {
+	if page.TotalRecords != 3 || page.TotalPages != 3 || page.Page != 4 {
 		t.Fatalf("pagination = %#v", page)
 	}
 	if page.Records == nil || len(page.Records) != 0 {
