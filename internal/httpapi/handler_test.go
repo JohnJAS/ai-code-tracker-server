@@ -37,6 +37,19 @@ func TestDashboardPage(t *testing.T) {
 	if !strings.Contains(response.Body.String(), "AI Code Tracker") {
 		t.Fatalf("body does not contain dashboard title: %q", response.Body.String())
 	}
+	for _, text := range []string{
+		`id="author"`,
+		`id="repository"`,
+		`id="start-date"`,
+		`id="end-date"`,
+		`id="previous-page"`,
+		`id="next-page"`,
+		`"/v1/records?"`,
+	} {
+		if !strings.Contains(response.Body.String(), text) {
+			t.Fatalf("dashboard does not contain %q", text)
+		}
+	}
 }
 
 func TestDashboardData(t *testing.T) {
