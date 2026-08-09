@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"ai-code-tracker-server/internal/domain"
@@ -132,4 +133,101 @@ func (s *MySQLStore) Dashboard(ctx context.Context) (Dashboard, error) {
 		return Dashboard{}, err
 	}
 	return dashboard, nil
+}
+
+func (s *MySQLStore) Records(ctx context.Context, query RecordQuery) (RecordPage, error) {
+	where, args := recordWhere(query)
+	const source = `
+		FROM commit_records c
+		JOIN repositories r ON r.id = c.repository_id`
+
+	var page RecordPage
+	page.Records = make([]DashboardRecord, 0)
+	page.Page = query.Page
+	page.PageSize = query.PageSize
+
+	if err := s.db.QueryRowContext(ctx, `
+		SELECT COUNT(*),
+			COALESCE(SUM(c.is_ai_commit), 0),
+			COALESCE(SUM(c.ai_lines), 0),
+			COALESCE(SUM(c.total_lines), 0),
+			COUNT(DISTINCT c.repository_id)`+source+where, args...).Scan(
+		&page.TotalCommits,
+		&page.AICommits,
+		&page.AILines,
+		&page.TotalLines,
+		&page.Repositories,
+	); err != nil {
+		return RecordPage{}, err
+	}
+
+	if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*)`+source+where, args...).Scan(&page.TotalRecords); err != nil {
+		return RecordPage{}, err
+	}
+	if page.TotalRecords > 0 {
+		page.TotalPages = (page.TotalRecords + query.PageSize - 1) / query.PageSize
+	}
+
+	pageArgs := append(append([]any{}, args...), query.PageSize, (query.Page-1)*query.PageSize)
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT r.origin, c.commit_id, c.author, c.ai_lines, c.total_lines, c.is_ai_commit,
+			DATE_FORMAT(c.committed_at, '%Y-%m-%d %H:%i:%s'), c.message`+source+where+`
+		ORDER BY c.committed_at DESC, c.commit_id DESC
+		LIMIT ? OFFSET ?`, pageArgs...)
+	if err != nil {
+		return RecordPage{}, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var record DashboardRecord
+		if err := rows.Scan(
+			&record.RepositoryURL,
+			&record.CommitID,
+			&record.Author,
+			&record.AILines,
+			&record.TotalLines,
+			&record.IsAICommit,
+			&record.Date,
+			&record.Message,
+		); err != nil {
+			return RecordPage{}, err
+		}
+		page.Records = append(page.Records, record)
+	}
+	if err := rows.Err(); err != nil {
+		return RecordPage{}, err
+	}
+	return page, nil
+}
+
+func recordWhere(query RecordQuery) (string, []any) {
+	clauses := make([]string, 0, 4)
+	args := make([]any, 0, 4)
+	if query.Author != "" {
+		clauses = append(clauses, `c.author LIKE ? ESCAPE '\\'`)
+		args = append(args, "%"+escapeLike(query.Author)+"%")
+	}
+	if query.Repository != "" {
+		clauses = append(clauses, `r.origin LIKE ? ESCAPE '\\'`)
+		args = append(args, "%"+escapeLike(query.Repository)+"%")
+	}
+	if !query.Start.IsZero() {
+		clauses = append(clauses, "c.committed_at >= ?")
+		args = append(args, query.Start)
+	}
+	if !query.End.IsZero() {
+		clauses = append(clauses, "c.committed_at < ?")
+		args = append(args, query.End)
+	}
+	if len(clauses) == 0 {
+		return "", args
+	}
+	return " WHERE " + strings.Join(clauses, " AND "), args
+}
+
+func escapeLike(value string) string {
+	value = strings.ReplaceAll(value, `\`, `\\`)
+	value = strings.ReplaceAll(value, "%", `\%`)
+	return strings.ReplaceAll(value, "_", `\_`)
 }
