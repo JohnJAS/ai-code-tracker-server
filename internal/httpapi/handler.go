@@ -5,6 +5,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/url"
+	"strconv"
+	"strings"
+	"time"
 
 	"ai-code-tracker-server/internal/domain"
 	"ai-code-tracker-server/internal/repository"
@@ -27,6 +31,8 @@ func (h handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 		writeJSON(writer, http.StatusOK, map[string]string{"status": "ok"})
 	case request.Method == http.MethodGet && request.URL.Path == "/v1/dashboard":
 		h.getDashboard(writer, request)
+	case request.Method == http.MethodGet && request.URL.Path == "/v1/records":
+		h.getRecords(writer, request)
 	case request.Method == http.MethodPost && request.URL.Path == "/v1/records":
 		h.postRecords(writer, request)
 	default:
@@ -41,6 +47,68 @@ func (h handler) getDashboard(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 	writeJSON(writer, http.StatusOK, dashboard)
+}
+
+func (h handler) getRecords(writer http.ResponseWriter, request *http.Request) {
+	query, err := parseRecordQuery(request.URL.Query())
+	if err != nil {
+		writeJSON(writer, http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+	records, err := h.store.Records(request.Context(), query)
+	if err != nil {
+		writeJSON(writer, http.StatusInternalServerError, errorResponse{Error: "could not load records"})
+		return
+	}
+	writeJSON(writer, http.StatusOK, records)
+}
+
+const (
+	defaultPageSize = 20
+	maximumPageSize = 100
+)
+
+func parseRecordQuery(values url.Values) (store.RecordQuery, error) {
+	query := store.RecordQuery{
+		Author:     strings.TrimSpace(values.Get("author")),
+		Repository: strings.TrimSpace(values.Get("repository")),
+		Page:       1,
+		PageSize:   defaultPageSize,
+	}
+
+	if value := values.Get("start_date"); value != "" {
+		start, err := time.Parse("2006-01-02", value)
+		if err != nil {
+			return store.RecordQuery{}, errors.New("start_date must use YYYY-MM-DD")
+		}
+		query.Start = start
+	}
+	if value := values.Get("end_date"); value != "" {
+		end, err := time.Parse("2006-01-02", value)
+		if err != nil {
+			return store.RecordQuery{}, errors.New("end_date must use YYYY-MM-DD")
+		}
+		query.End = end.AddDate(0, 0, 1)
+	}
+	if !query.Start.IsZero() && !query.End.IsZero() && !query.End.After(query.Start) {
+		return store.RecordQuery{}, errors.New("end_date must not be before start_date")
+	}
+
+	for name, target := range map[string]*int{"page": &query.Page, "page_size": &query.PageSize} {
+		value := values.Get(name)
+		if value == "" {
+			continue
+		}
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 {
+			return store.RecordQuery{}, errors.New(name + " must be a positive integer")
+		}
+		if name == "page_size" && parsed > maximumPageSize {
+			return store.RecordQuery{}, errors.New("page_size must not exceed 100")
+		}
+		*target = parsed
+	}
+	return query, nil
 }
 
 func (h handler) postRecords(writer http.ResponseWriter, request *http.Request) {

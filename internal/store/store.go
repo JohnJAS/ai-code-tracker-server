@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"ai-code-tracker-server/internal/domain"
 )
@@ -9,6 +10,7 @@ import (
 type Store interface {
 	UpsertBatch(ctx context.Context, origin string, records []domain.Record) (InsertResult, error)
 	Dashboard(ctx context.Context) (Dashboard, error)
+	Records(ctx context.Context, query RecordQuery) (RecordPage, error)
 }
 
 type InsertResult struct {
@@ -34,4 +36,26 @@ type DashboardRecord struct {
 	IsAICommit    bool   `json:"is_ai_commit"`
 	Date          string `json:"date"`
 	Message       string `json:"message"`
+}
+
+type RecordQuery struct {
+	Author     string
+	Repository string
+	Start      time.Time
+	End        time.Time
+	Page       int
+	PageSize   int
+}
+
+type RecordPage struct {
+	TotalCommits int               `json:"total_commits"`
+	AICommits    int               `json:"ai_commits"`
+	AILines      int               `json:"ai_lines"`
+	TotalLines   int               `json:"total_lines"`
+	Repositories int               `json:"repositories"`
+	Records      []DashboardRecord `json:"records"`
+	TotalRecords int               `json:"total_records"`
+	Page         int               `json:"page"`
+	PageSize     int               `json:"page_size"`
+	TotalPages   int               `json:"total_pages"`
 }
