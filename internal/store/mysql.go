@@ -86,7 +86,7 @@ func (s *MySQLStore) Dashboard(ctx context.Context) (Dashboard, error) {
 	if err := s.db.QueryRowContext(ctx, `
 		SELECT
 			COUNT(*),
-			COALESCE(SUM(is_ai_commit), 0),
+			COALESCE(SUM(ai_lines > 0), 0),
 			COALESCE(SUM(ai_lines), 0),
 			COALESCE(SUM(total_lines), 0),
 			(SELECT COUNT(*) FROM repositories)
@@ -148,7 +148,7 @@ func (s *MySQLStore) Records(ctx context.Context, query RecordQuery) (RecordPage
 
 	if err := s.db.QueryRowContext(ctx, `
 		SELECT COUNT(*),
-			COALESCE(SUM(c.is_ai_commit), 0),
+			COALESCE(SUM(c.ai_lines > 0), 0),
 			COALESCE(SUM(c.ai_lines), 0),
 			COALESCE(SUM(c.total_lines), 0),
 			COUNT(DISTINCT c.repository_id),
