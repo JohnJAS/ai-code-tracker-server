@@ -151,12 +151,14 @@ func (s *MySQLStore) Records(ctx context.Context, query RecordQuery) (RecordPage
 			COALESCE(SUM(c.is_ai_commit), 0),
 			COALESCE(SUM(c.ai_lines), 0),
 			COALESCE(SUM(c.total_lines), 0),
-			COUNT(DISTINCT c.repository_id)`+source+where, args...).Scan(
+			COUNT(DISTINCT c.repository_id),
+			COUNT(DISTINCT c.author)`+source+where, args...).Scan(
 		&page.TotalCommits,
 		&page.AICommits,
 		&page.AILines,
 		&page.TotalLines,
 		&page.Repositories,
+		&page.Contributors,
 	); err != nil {
 		return RecordPage{}, err
 	}

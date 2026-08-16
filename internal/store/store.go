@@ -53,6 +53,7 @@ type RecordPage struct {
 	AILines      int               `json:"ai_lines"`
 	TotalLines   int               `json:"total_lines"`
 	Repositories int               `json:"repositories"`
+	Contributors int               `json:"contributors"`
 	Records      []DashboardRecord `json:"records"`
 	TotalRecords int               `json:"total_records"`
 	Page         int               `json:"page"`
