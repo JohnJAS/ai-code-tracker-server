@@ -44,11 +44,29 @@ func TestDashboardPage(t *testing.T) {
 		`id="end-date"`,
 		`id="previous-page"`,
 		`id="next-page"`,
+		`id="contributors"`,
 		`"/v1/records?"`,
+		`set("contributors", data.contributors);`,
 	} {
 		if !strings.Contains(response.Body.String(), text) {
 			t.Fatalf("dashboard does not contain %q", text)
 		}
+	}
+}
+
+func TestRecordsDataIncludesContributors(t *testing.T) {
+	storage := &fakeStore{records: store.RecordPage{
+		Contributors: 2,
+		Records:      []store.DashboardRecord{},
+		Page:         1,
+		PageSize:     20,
+	}}
+	response := httptest.NewRecorder()
+
+	NewHandler(storage).ServeHTTP(response, httptest.NewRequest(http.MethodGet, "/v1/records", nil))
+
+	if !strings.Contains(response.Body.String(), `"contributors":2`) {
+		t.Fatalf("body = %q", response.Body.String())
 	}
 }
 
