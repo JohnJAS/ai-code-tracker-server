@@ -48,6 +48,7 @@ func TestMySQLStoreDashboardSummarizesAndOrdersRecords(t *testing.T) {
 	db := newMigratedDatabase(t, dsn)
 	repository := store.NewMySQLStore(db)
 	first := validRecord()
+	first.AiTool = "claude"
 	second := domain.Record{
 		Author:     "reviewer",
 		CommitID:   strings.Repeat("b", 40),
@@ -73,6 +74,9 @@ func TestMySQLStoreDashboardSummarizesAndOrdersRecords(t *testing.T) {
 	}
 	if dashboard.RecentRecords[0].CommitID != second.CommitID || dashboard.RecentRecords[0].Message != second.Message {
 		t.Fatalf("newest record = %#v", dashboard.RecentRecords[0])
+	}
+	if dashboard.RecentRecords[1].AITool != "claude" {
+		t.Fatalf("AI tool = %q, want %q", dashboard.RecentRecords[1].AITool, "claude")
 	}
 }
 

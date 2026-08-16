@@ -55,7 +55,7 @@ const dashboardHTML = `<!doctype html>
     <header><h1>AI Code Tracker</h1><span id="status" class="status">&#27491;&#22312;&#21152;&#36733;</span></header>
     <section class="stats" aria-label="&#32479;&#35745;&#27010;&#35272;">
       <div class="stat"><span>&#25552;&#20132;&#24635;&#25968;</span><strong id="total-commits">-</strong></div>
-      <div class="stat"><span>AI &#25552;&#20132;</span><strong id="ai-commits">-</strong></div>
+      <div class="stat"><span>AI &#21442;&#19982;&#25552;&#20132;</span><strong id="ai-commits">-</strong></div>
       <div class="stat"><span>AI &#20195;&#30721;&#34892;</span><strong id="ai-lines">-</strong></div>
       <div class="stat"><span>&#20195;&#30721;&#24635;&#34892;</span><strong id="total-lines">-</strong></div>
       <div class="stat"><span>&#20179;&#24211;&#25968;&#37327;</span><strong id="repositories">-</strong></div>
@@ -73,7 +73,7 @@ const dashboardHTML = `<!doctype html>
         </form>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>&#26102;&#38388;</th><th>&#20179;&#24211;</th><th>&#20316;&#32773;</th><th>AI &#34892;</th><th>&#24635;&#34892;</th><th>&#25552;&#20132;</th><th>&#20449;&#24687;</th></tr></thead><tbody id="records"></tbody></table>
+        <table><thead><tr><th>&#26102;&#38388;</th><th>&#20179;&#24211;</th><th>&#20316;&#32773;</th><th>AI &#24037;&#20855;</th><th>AI &#34892;</th><th>&#24635;&#34892;</th><th>&#25552;&#20132;</th><th>&#20449;&#24687;</th></tr></thead><tbody id="records"></tbody></table>
       </div>
       <div class="pagination">
         <span id="result-summary" class="status"></span>
@@ -120,7 +120,7 @@ const dashboardHTML = `<!doctype html>
       if (data.records.length === 0) {
         const row = document.createElement("tr");
         const empty = document.createElement("td");
-        empty.colSpan = 7;
+        empty.colSpan = 8;
         empty.className = "empty";
         empty.textContent = "没有找到匹配的提交记录";
         row.append(empty);
@@ -131,6 +131,7 @@ const dashboardHTML = `<!doctype html>
           cell(row, record.date);
           cell(row, record.repository_url);
           cell(row, record.author);
+          cell(row, record.ai_tool);
           cell(row, record.ai_lines, record.is_ai_commit ? "ai" : "");
           cell(row, record.total_lines);
           cell(row, record.commit_id.slice(0, 12), "commit");

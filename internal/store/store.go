@@ -34,6 +34,7 @@ type DashboardRecord struct {
 	AILines       int    `json:"ai_lines"`
 	TotalLines    int    `json:"total_lines"`
 	IsAICommit    bool   `json:"is_ai_commit"`
+	AITool        string `json:"ai_tool"`
 	Date          string `json:"date"`
 	Message       string `json:"message"`
 }
