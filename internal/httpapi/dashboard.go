@@ -22,7 +22,7 @@ const dashboardHTML = `<!doctype html>
     header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #ccd4d0; padding-bottom: 22px; }
     h1 { font-size: 26px; font-weight: 700; letter-spacing: 0; margin: 0; }
     .status { color: #52625e; font-size: 14px; }
-    .stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 28px 0 38px; }
+    .stats { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; margin: 28px 0 38px; }
     .stat { border: 1px solid #ccd4d0; background: #fff; padding: 18px; min-height: 112px; }
     .stat span { display: block; color: #52625e; font-size: 13px; margin-bottom: 12px; }
     .stat strong { font-size: 30px; font-weight: 650; }
@@ -59,6 +59,7 @@ const dashboardHTML = `<!doctype html>
       <div class="stat"><span>AI &#20195;&#30721;&#34892;</span><strong id="ai-lines">-</strong></div>
       <div class="stat"><span>&#20195;&#30721;&#24635;&#34892;</span><strong id="total-lines">-</strong></div>
       <div class="stat"><span>&#20179;&#24211;&#25968;&#37327;</span><strong id="repositories">-</strong></div>
+      <div class="stat"><span>&#36129;&#29486;&#20154;&#25968;</span><strong id="contributors">-</strong></div>
     </section>
     <section>
       <div class="records-heading">
@@ -114,6 +115,7 @@ const dashboardHTML = `<!doctype html>
       set("ai-lines", data.ai_lines);
       set("total-lines", data.total_lines);
       set("repositories", data.repositories);
+      set("contributors", data.contributors);
       records.replaceChildren();
       if (data.records.length === 0) {
         const row = document.createElement("tr");
