@@ -18,7 +18,7 @@ const dashboardHTML = `<!doctype html>
     :root { color: #172124; background: #f6f7f2; font-family: Inter, "Microsoft YaHei", sans-serif; }
     * { box-sizing: border-box; }
     body { margin: 0; }
-    main { max-width: 1180px; margin: 0 auto; padding: 40px 24px 64px; }
+    main { margin: 0; padding: 32px clamp(16px, 2vw, 40px) 64px; }
     header { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid #ccd4d0; padding-bottom: 22px; }
     h1 { font-size: 26px; font-weight: 700; letter-spacing: 0; margin: 0; }
     .status { color: #52625e; font-size: 14px; }
@@ -36,7 +36,14 @@ const dashboardHTML = `<!doctype html>
     button { border: 1px solid #172124; background: #172124; color: #fff; padding: 9px 14px; cursor: pointer; }
     button:disabled { border-color: #c7cfcb; background: #e7ebe8; color: #7a8581; cursor: not-allowed; }
     .table-wrap { overflow-x: auto; border-top: 2px solid #172124; }
-    table { width: 100%; border-collapse: collapse; min-width: 820px; background: #fff; }
+    table { width: 100%; border-collapse: collapse; min-width: 920px; table-layout: fixed; background: #fff; }
+    .date-column { width: 140px; }
+    .repository-column { width: 22%; }
+    .author-column { width: 140px; }
+    .tool-column { width: 120px; }
+    .ai-lines-column, .total-lines-column { width: 84px; }
+    .commit-column { width: 130px; }
+    .message-column { width: 30%; }
     th, td { border-bottom: 1px solid #dce2df; padding: 13px 12px; text-align: left; vertical-align: top; font-size: 13px; }
     th { color: #52625e; font-size: 12px; font-weight: 600; background: #edf1ee; }
     .message { max-width: 380px; word-break: break-word; }
@@ -73,7 +80,7 @@ const dashboardHTML = `<!doctype html>
         </form>
       </div>
       <div class="table-wrap">
-        <table><thead><tr><th>&#26102;&#38388;</th><th>&#20179;&#24211;</th><th>&#20316;&#32773;</th><th>AI &#24037;&#20855;</th><th>AI &#34892;</th><th>&#24635;&#34892;</th><th>&#25552;&#20132;</th><th>&#20449;&#24687;</th></tr></thead><tbody id="records"></tbody></table>
+        <table><colgroup><col class="date-column"><col class="repository-column"><col class="author-column"><col class="tool-column"><col class="ai-lines-column"><col class="total-lines-column"><col class="commit-column"><col class="message-column"></colgroup><thead><tr><th>&#26102;&#38388;</th><th>&#20179;&#24211;</th><th>&#20316;&#32773;</th><th>AI &#24037;&#20855;</th><th>AI &#34892;</th><th>&#24635;&#34892;</th><th>&#25552;&#20132;</th><th>&#20449;&#24687;</th></tr></thead><tbody id="records"></tbody></table>
       </div>
       <div class="pagination">
         <span id="result-summary" class="status"></span>

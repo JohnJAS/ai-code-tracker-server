@@ -50,6 +50,12 @@ func TestDashboardPage(t *testing.T) {
 		`AI &#21442;&#19982;&#25552;&#20132;`,
 		`AI &#24037;&#20855;`,
 		`record.ai_tool`,
+		`main { margin: 0; padding: 32px clamp(16px, 2vw, 40px) 64px; }`,
+		`table { width: 100%; border-collapse: collapse; min-width: 920px; table-layout: fixed; background: #fff; }`,
+		`.date-column { width: 140px; }`,
+		`.repository-column { width: 22%; }`,
+		`.message-column { width: 30%; }`,
+		`<colgroup><col class="date-column"><col class="repository-column"><col class="author-column"><col class="tool-column"><col class="ai-lines-column"><col class="total-lines-column"><col class="commit-column"><col class="message-column"></colgroup>`,
 	} {
 		if !strings.Contains(response.Body.String(), text) {
 			t.Fatalf("dashboard does not contain %q", text)
