@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS commit_records (
   ai_lines INT UNSIGNED NOT NULL,
   total_lines INT UNSIGNED NOT NULL,
   is_ai_commit BOOLEAN NOT NULL,
+  ai_tool VARCHAR(255) NOT NULL DEFAULT '',
   committed_at DATETIME NOT NULL,
   message TEXT NOT NULL,
   received_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

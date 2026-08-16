@@ -22,6 +22,7 @@ type Record struct {
 	AiLines    int    `json:"ai_lines"`
 	TotalLines int    `json:"total_lines"`
 	IsAICommit bool   `json:"is_ai_commit"`
+	AiTool     string `json:"ai_tool"`
 	CommitID   string `json:"commit_id"`
 	Date       string `json:"date"`
 	Message    string `json:"message"`

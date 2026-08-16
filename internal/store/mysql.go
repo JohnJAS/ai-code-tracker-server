@@ -41,8 +41,8 @@ func (s *MySQLStore) UpsertBatch(ctx context.Context, origin string, records []d
 
 	statement, err := tx.PrepareContext(ctx, `
 		INSERT IGNORE INTO commit_records
-		(repository_id, commit_id, author, ai_lines, total_lines, is_ai_commit, committed_at, message)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+		(repository_id, commit_id, author, ai_lines, total_lines, is_ai_commit, ai_tool, committed_at, message)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return InsertResult{}, err
 	}
@@ -62,6 +62,7 @@ func (s *MySQLStore) UpsertBatch(ctx context.Context, origin string, records []d
 			record.AiLines,
 			record.TotalLines,
 			record.IsAICommit,
+			record.AiTool,
 			committedAt,
 			record.Message,
 		)
@@ -101,7 +102,7 @@ func (s *MySQLStore) Dashboard(ctx context.Context) (Dashboard, error) {
 	}
 
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT r.origin, c.commit_id, c.author, c.ai_lines, c.total_lines, c.is_ai_commit,
+		SELECT r.origin, c.commit_id, c.author, c.ai_lines, c.total_lines, c.is_ai_commit, c.ai_tool,
 			DATE_FORMAT(c.committed_at, '%Y-%m-%d %H:%i:%s'), c.message
 		FROM commit_records c
 		JOIN repositories r ON r.id = c.repository_id
@@ -122,6 +123,7 @@ func (s *MySQLStore) Dashboard(ctx context.Context) (Dashboard, error) {
 			&record.AILines,
 			&record.TotalLines,
 			&record.IsAICommit,
+			&record.AITool,
 			&record.Date,
 			&record.Message,
 		); err != nil {
@@ -172,7 +174,7 @@ func (s *MySQLStore) Records(ctx context.Context, query RecordQuery) (RecordPage
 
 	pageArgs := append(append([]any{}, args...), query.PageSize, (query.Page-1)*query.PageSize)
 	rows, err := s.db.QueryContext(ctx, `
-		SELECT r.origin, c.commit_id, c.author, c.ai_lines, c.total_lines, c.is_ai_commit,
+		SELECT r.origin, c.commit_id, c.author, c.ai_lines, c.total_lines, c.is_ai_commit, c.ai_tool,
 			DATE_FORMAT(c.committed_at, '%Y-%m-%d %H:%i:%s'), c.message`+source+where+`
 		ORDER BY c.committed_at DESC, c.commit_id DESC
 		LIMIT ? OFFSET ?`, pageArgs...)
@@ -190,6 +192,7 @@ func (s *MySQLStore) Records(ctx context.Context, query RecordQuery) (RecordPage
 			&record.AILines,
 			&record.TotalLines,
 			&record.IsAICommit,
+			&record.AITool,
 			&record.Date,
 			&record.Message,
 		); err != nil {
