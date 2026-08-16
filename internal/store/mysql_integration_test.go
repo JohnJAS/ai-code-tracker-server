@@ -97,7 +97,7 @@ func TestMySQLStoreRecordsFiltersSummarizeAndPaginate(t *testing.T) {
 		t.Fatalf("Records() error = %v", err)
 	}
 	if page.TotalCommits != 2 || page.AICommits != 1 || page.AILines != 7 ||
-		page.TotalLines != 10 || page.Repositories != 1 {
+		page.TotalLines != 10 || page.Repositories != 1 || page.Contributors != 1 {
 		t.Fatalf("statistics = %#v", page)
 	}
 	if page.TotalRecords != 2 || page.Page != 1 || page.PageSize != 1 || page.TotalPages != 2 {
