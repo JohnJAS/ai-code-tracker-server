@@ -51,7 +51,7 @@ func TestMySQLStoreDashboardSummarizesAndOrdersRecords(t *testing.T) {
 	second := domain.Record{
 		Author:     "reviewer",
 		CommitID:   strings.Repeat("b", 40),
-		AiLines:    0,
+		AiLines:    2,
 		TotalLines: 3,
 		IsAICommit: false,
 		Date:       "2026-07-20 10:01:00",
@@ -65,7 +65,7 @@ func TestMySQLStoreDashboardSummarizesAndOrdersRecords(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Dashboard() error = %v", err)
 	}
-	if dashboard.TotalCommits != 2 || dashboard.AICommits != 1 || dashboard.AILines != 1 || dashboard.TotalLines != 5 || dashboard.Repositories != 1 {
+	if dashboard.TotalCommits != 2 || dashboard.AICommits != 2 || dashboard.AILines != 3 || dashboard.TotalLines != 5 || dashboard.Repositories != 1 {
 		t.Fatalf("dashboard summary = %#v", dashboard)
 	}
 	if len(dashboard.RecentRecords) != 2 {
@@ -96,8 +96,8 @@ func TestMySQLStoreRecordsFiltersSummarizeAndPaginate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Records() error = %v", err)
 	}
-	if page.TotalCommits != 2 || page.AICommits != 1 || page.AILines != 7 ||
-		page.TotalLines != 10 || page.Repositories != 1 || page.Contributors != 1 {
+	if page.TotalCommits != 2 || page.AICommits != 2 || page.AILines != 9 ||
+		page.TotalLines != 12 || page.Repositories != 1 || page.Contributors != 1 {
 		t.Fatalf("statistics = %#v", page)
 	}
 	if page.TotalRecords != 2 || page.Page != 1 || page.PageSize != 1 || page.TotalPages != 2 {
@@ -211,8 +211,8 @@ func seedRecordPage(t *testing.T, repository *store.MySQLStore) {
 		{
 			Author:     "dev",
 			CommitID:   strings.Repeat("c", 40),
-			AiLines:    0,
-			TotalLines: 0,
+			AiLines:    2,
+			TotalLines: 2,
 			IsAICommit: false,
 			Date:       "2026-08-04 10:00:00",
 			Message:    "end date match",
